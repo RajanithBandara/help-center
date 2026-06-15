@@ -1,0 +1,42 @@
+{
+  "kind": "collectionType",
+  "collectionName": "docs",
+  "info": {
+    "singularName": "doc",
+    "pluralName": "docs",
+    "displayName": "Doc",
+    "description": "Synpact platform documentation article"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "section": {
+      "type": "string",
+      "required": true,
+      "description": "Documentation section, e.g. Getting Started, Charts, Data Library"
+    },
+    "excerpt": {
+      "type": "text",
+      "description": "Short summary shown in the docs index"
+    },
+    "body": {
+      "type": "richtext",
+      "description": "Markdown body rendered on the article page"
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}
