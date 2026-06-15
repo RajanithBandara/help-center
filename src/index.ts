@@ -1,4 +1,5 @@
 import type { Core } from '@strapi/strapi';
+import { DOCS } from './seed/docs';
 
 /**
  * Help Center content — the single source of truth for the seeded knowledge base.
@@ -119,6 +120,50 @@ async function ensureFaqs(strapi: Core.Strapi) {
   }
 }
 
+/**
+ * Ensure every documentation article in DOCS exists. Matched by slug. Creates
+ * missing docs and reconciles organizational fields (`order`, `section`) when
+ * they drift — but never overwrites `title`, `excerpt` or `body`, so content
+ * edited in the admin is preserved.
+ */
+async function ensureDocs(strapi: Core.Strapi) {
+  const existing = await strapi
+    .documents('api::doc.doc')
+    .findMany({ status: 'published', limit: 200 });
+  const existingBySlug = new Map(existing.map((d) => [d.slug as string, d]));
+
+  for (const doc of DOCS) {
+    const found = existingBySlug.get(doc.slug);
+
+    if (!found) {
+      await strapi.documents('api::doc.doc').create({
+        data: {
+          title: doc.title,
+          slug: doc.slug,
+          section: doc.section,
+          excerpt: doc.excerpt,
+          body: doc.body,
+          order: doc.order,
+        },
+        status: 'published',
+      });
+      strapi.log.info(`[help-center] created doc "${doc.title}" (${doc.section})`);
+      continue;
+    }
+
+    const driftedOrder = (found as { order?: number }).order !== doc.order;
+    const driftedSection = (found as { section?: string }).section !== doc.section;
+
+    if (driftedOrder || driftedSection) {
+      await strapi
+        .documents('api::doc.doc')
+        .update({ documentId: found.documentId, data: { order: doc.order, section: doc.section } });
+      await strapi.documents('api::doc.doc').publish({ documentId: found.documentId });
+      strapi.log.info(`[help-center] reconciled doc "${doc.title}"`);
+    }
+  }
+}
+
 export default {
   /**
    * An asynchronous register function that runs before
@@ -129,10 +174,24 @@ export default {
   /**
    * An asynchronous bootstrap function that runs before
    * your application gets started.
+   *
+   * Seeding is best-effort: a failure here must never crash startup (which
+   * would fail the deploy / health check). Errors are logged so the admin
+   * panel still comes up and content can be managed manually.
    */
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
-    await grantPublicReadAccess(strapi, ['api::category.category', 'api::faq.faq']);
-    await ensureCategories(strapi);
-    await ensureFaqs(strapi);
+    try {
+      await grantPublicReadAccess(strapi, [
+        'api::category.category',
+        'api::faq.faq',
+        'api::doc.doc',
+      ]);
+      await ensureCategories(strapi);
+      await ensureFaqs(strapi);
+      await ensureDocs(strapi);
+    } catch (error) {
+      strapi.log.error('[help-center] bootstrap seeding failed (server will still start):');
+      strapi.log.error(error instanceof Error ? error.stack ?? error.message : String(error));
+    }
   },
 };
