@@ -1,0 +1,28 @@
+diff --git a/node_modules/@strapi/upload/dist/admin/utils/formatDuration.js b/node_modules/@strapi/upload/dist/admin/utils/formatDuration.js
+index d875c9d..a9ade72 100644
+--- a/node_modules/@strapi/upload/dist/admin/utils/formatDuration.js
++++ b/node_modules/@strapi/upload/dist/admin/utils/formatDuration.js
+@@ -4,6 +4,9 @@ var dateFns = require('date-fns');
+ 
+ const zeroPad = (num)=>String(num).padStart(2, '0');
+ const formatDuration = (durationInSecond)=>{
++    if (!Number.isFinite(durationInSecond) || durationInSecond < 0) {
++        return null;
++    }
+     const duration = dateFns.intervalToDuration({
+         start: 0,
+         end: durationInSecond * 1000
+diff --git a/node_modules/@strapi/upload/dist/admin/utils/formatDuration.mjs b/node_modules/@strapi/upload/dist/admin/utils/formatDuration.mjs
+index 688fe90..51b995d 100644
+--- a/node_modules/@strapi/upload/dist/admin/utils/formatDuration.mjs
++++ b/node_modules/@strapi/upload/dist/admin/utils/formatDuration.mjs
+@@ -2,6 +2,9 @@ import { intervalToDuration } from 'date-fns';
+ 
+ const zeroPad = (num)=>String(num).padStart(2, '0');
+ const formatDuration = (durationInSecond)=>{
++    if (!Number.isFinite(durationInSecond) || durationInSecond < 0) {
++        return null;
++    }
+     const duration = intervalToDuration({
+         start: 0,
+         end: durationInSecond * 1000
